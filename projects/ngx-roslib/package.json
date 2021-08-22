@@ -1,0 +1,23 @@
+{
+    "name": "ngx-roslib",
+    "version": "0.0.1",
+    "author": {
+        "name": "Maxime Verreault",
+        "email": "maximeverreault24@hey.com"
+    },
+    "maintainers": [
+        {
+            "email": "maximeverreault24@hey.com",
+            "name": "Maxime Verreault"
+        }
+    ],
+    "license": "MIT",
+    "repository": "https://bitbucket.asuqtr.com/projects/NG-ROS/repos/ngx-roslib/browse",
+    "peerDependencies": {
+        "@angular/common": "^12.2.0",
+        "@angular/core": "^12.2.0"
+    },
+    "dependencies": {
+        "tslib": "^2.3.0"
+    }
+}
