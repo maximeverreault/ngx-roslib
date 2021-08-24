@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { Observable, Subject, Subscription } from 'rxjs';
-import { filter, pluck, take } from 'rxjs/operators';
+import { filter, pluck, take, tap } from 'rxjs/operators';
 
 @Injectable({
     providedIn: 'root',
@@ -16,6 +16,10 @@ export class NgxRoslibService implements OnDestroy {
 
     constructor() {}
 
+    set statusLevel(level: StatusMessageLevel) {
+        if (this.ros) this.ros.statusLevel = level;
+    }
+
     connect(
         url: string,
         transportLibrary: RosLibTransportLibrary = 'websocket',
@@ -29,13 +33,19 @@ export class NgxRoslibService implements OnDestroy {
         return ros;
     }
 
-    set statusLevel(level: StatusMessageLevel) {
-        if (this.ros) this.ros.statusLevel = level;
-    }
-
     ngOnDestroy() {
         this.connection$?.complete();
     }
+}
+
+interface GetTopicsServiceResponse {
+    topics: string[];
+    types: string[];
+}
+
+interface GetNodesServiceResponse {
+    nodes: string[];
+    types: string[];
 }
 
 export class Rosbridge {
@@ -62,6 +72,11 @@ export class Rosbridge {
                 transportOptions
             );
         }
+    }
+
+    set statusLevel(level: StatusMessageLevel) {
+        const setStateLevelRequest = new SetStatusLevel(level);
+        this.sendRequest(setStateLevelRequest);
     }
 
     connect(
@@ -140,9 +155,54 @@ export class Rosbridge {
         }
     }
 
-    set statusLevel(level: StatusMessageLevel) {
-        const setStateLevelRequest = new SetStatusLevel(level);
-        this.sendRequest(setStateLevelRequest);
+    getTopics(
+        callback: (topics: string[]) => void,
+        failedCallback?: (error: any) => void
+    ): void {
+        const topicsService = new RosService<Object, GetTopicsServiceResponse>({
+            ros: this,
+            name: '/rosapi/topics',
+            serviceType: 'rosapi/Topics',
+        });
+
+        if (failedCallback) {
+            topicsService.call(
+                {},
+                (msg) => {
+                    callback(msg.topics);
+                },
+                failedCallback
+            );
+        } else {
+            topicsService.call({}, (msg) => {
+                callback(msg.topics);
+            });
+        }
+    }
+
+    getNodes(
+        callback: (nodes: string[]) => void,
+        failedCallback?: (error: any) => void
+    ): void {
+        const topicsService = new RosService<Object, GetNodesServiceResponse>({
+            ros: this,
+            name: '/rosapi/nodes',
+            serviceType: 'rosapi/Nodes',
+        });
+
+        if (failedCallback) {
+            topicsService.call(
+                {},
+                (msg) => {
+                    callback(msg.nodes);
+                },
+                failedCallback
+            );
+        } else {
+            topicsService.call({}, (msg) => {
+                callback(msg.nodes);
+            });
+        }
     }
 }
 
@@ -308,7 +368,7 @@ class Subscribe extends RosbridgeProtocol {
 }
 
 class ServiceCall extends RosbridgeProtocol {
-    private id: string | undefined;
+    id: string | undefined;
     private service: string;
     private args: Object | undefined = {};
     private fragment_size: number | undefined;
@@ -316,15 +376,15 @@ class ServiceCall extends RosbridgeProtocol {
 
     constructor(
         service: string,
-        id: string,
         args?: Object,
+        id?: string,
         fragment_size?: number,
         compression?: 'none' | 'png'
     ) {
         super();
         this.op = 'call_service';
         this.service = service;
-        this.id = `call_service:${this.service}:${++idCounter}`;
+        this.id = id ?? `call_service:${this.service}:${++idCounter}`;
         this.args = checkJsonCompatible(args) ? args : {};
         this.fragment_size = fragment_size;
         this.compression = compression;
@@ -352,6 +412,8 @@ class UnadvertiseService extends RosbridgeProtocol {
         this.service = service;
     }
 }
+
+class ServiceRequest extends RosbridgeProtocol {}
 
 class ServiceResponse extends RosbridgeProtocol {
     private id: string | undefined;
@@ -412,8 +474,8 @@ export class RosTopic<T extends { toString: () => string }>
     queueSize?: number;
     queueLength?: number;
     reconnectOnClose?: boolean;
-    private observable$: Observable<T> | undefined;
     ros: Rosbridge;
+    private observable$: Observable<T> | undefined;
     private id: string | undefined;
     private sub: Subscription | undefined;
 
@@ -488,6 +550,75 @@ export class RosTopic<T extends { toString: () => string }>
     unadvertise() {
         const unadvertiseRequest = new Unadvertise(this.name, this.id);
         this.ros.sendRequest(unadvertiseRequest);
+    }
+}
+
+interface RosServiceParams {
+    name: string;
+    serviceType: string;
+    ros: Rosbridge;
+}
+
+class RosService<
+    T_REQ extends { toString: () => string },
+    T_RES extends { toString: () => string }
+> implements RosServiceParams
+{
+    name: string;
+    ros: Rosbridge;
+    serviceType: string;
+    private id: number | undefined;
+    private isAdvertised: boolean = false;
+
+    constructor({ ros, name, serviceType }: RosServiceParams) {
+        this.ros = ros;
+        this.name = name;
+        this.serviceType = serviceType;
+    }
+
+    advertise() {
+        const serviceAdvertiseRequest = new AdvertiseService(
+            this.serviceType,
+            this.name
+        );
+        this.ros.sendRequest(serviceAdvertiseRequest);
+        this.isAdvertised = true;
+    }
+
+    call(
+        req: T_REQ,
+        callback: (res: T_RES) => void,
+        failedCallback?: (res: any) => void
+    ) {
+        const serviceCallRequest = new ServiceCall(this.name, req);
+
+        this.ros.connection$
+            ?.pipe(
+                filter(
+                    (data) =>
+                        data?.service === this.name && // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+                        data?.id === serviceCallRequest.id && // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+                        data?.op === 'service_response' // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+                ),
+                tap((msg) => {
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                    if (msg?.result !== undefined && msg?.result === false)
+                        if (failedCallback) {
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                            failedCallback(msg.values);
+                        }
+                }),
+                pluck('values'),
+                take(1)
+            )
+            .subscribe((message: T_RES) => callback(message));
+        this.ros.sendRequest(serviceCallRequest);
+    }
+
+    unadvertise() {
+        if (!this.isAdvertised) return;
+        const serviceUnadvertiseRequest = new UnadvertiseService(this.name);
+        this.ros.sendRequest(serviceUnadvertiseRequest);
     }
 }
 
