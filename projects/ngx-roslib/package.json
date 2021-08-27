@@ -1,6 +1,6 @@
 {
     "name": "ngx-roslib",
-    "version": "0.0.1",
+    "version": "0.0.5",
     "author": {
         "name": "Maxime Verreault",
         "email": "maximeverreault24@hey.com"
@@ -16,7 +16,7 @@
         "url" : "https://www.buymeacoffee.com/maximeverreault"
     },
     "license": "MIT",
-    "repository": "https://bitbucket.asuqtr.com/projects/NG-ROS/repos/ngx-roslib/browse",
+    "repository": "https://github.com/maximeverreault/ngx-roslib",
     "peerDependencies": {
         "@angular/common": "^12.2.0",
         "@angular/core": "^12.2.0"

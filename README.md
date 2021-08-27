@@ -112,10 +112,10 @@ Topics:
 
 Services:
 
-- [ ] Call service
-- [ ] Response
-- [ ] Advertise
-- [ ] Unadvertise
+- [X] Call service
+- [X] Response
+- [X] Advertise
+- [X] Unadvertise
 
 Params:
 
@@ -125,8 +125,8 @@ Params:
 
 Miscellaneous:
 
-- [ ] Get Node list
-- [ ] Get Topic list
+- [X] Get Node list
+- [X] Get Topic list
 - [ ] Authentication
 - [ ] Get Service list
 - [ ] Get Param list
