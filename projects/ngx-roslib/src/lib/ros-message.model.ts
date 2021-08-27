@@ -2,6 +2,41 @@ export interface NumberMessage {
     data: number;
 }
 
+export interface NumberArrayMessage {
+    data: number[];
+}
+
+export interface BoolMessage {
+    data: boolean;
+}
+
+export interface StringMessage {
+    data: string;
+}
+
+export interface ImuMessage {
+    header: RosMsgHeader;
+    orientation?: QuaternionMessage | null;
+    orientation_covariance?: number[] | null;
+    angular_velocity?: Vector3Message | null;
+    angular_velocity_covariance?: number[] | null;
+    linear_acceleration?: Vector3Message | null;
+    linear_acceleration_covariance?: number[] | null;
+}
+
+interface Vector3Message {
+    x?: number | null;
+    y?: number | null;
+    z?: number | null;
+}
+
+interface QuaternionMessage {
+    x?: number | null;
+    y?: number | null;
+    z?: number | null;
+    w?: number | null;
+}
+
 export interface JoyMessage {
     header: RosMsgHeader;
     axes?: number[] | null;

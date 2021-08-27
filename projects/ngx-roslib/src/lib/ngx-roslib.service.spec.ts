@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { NgxRoslibService, RosTopic } from './ngx-roslib.service';
+import { NgxRoslibService, RosService, RosTopic } from './ngx-roslib.service';
 import { NumberMessage, RosoutMessage } from './ros-message.model';
 
 describe('NgxRoslibService', () => {
@@ -61,12 +61,88 @@ describe('NgxRoslibService', () => {
                 messageType: 'std_msgs/UInt16',
             });
             topic.advertise();
-            topic.subscribe((msg) => {
-                expect(msg.data).toEqual(42069); // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+            topic.subscribe((msg: NumberMessage) => {
+                expect(msg.data).toEqual(42069);
                 done();
             });
 
             topic.publish({ data: 42069 });
+        });
+    });
+
+    it('should call a service successfully', (done) => {
+        const rbServer = service.connect('ws://localhost:9090');
+        service.onOpen?.subscribe(() => {
+            const service = new RosService<
+                Object,
+                {
+                    topics: string[];
+                    types: string[];
+                }
+            >({
+                ros: rbServer,
+                name: '/rosapi/topics',
+                serviceType: 'rosapi/Topics',
+            });
+
+            service.call({}, (msg) => {
+                expect(msg.topics).toBeTruthy();
+                expect(msg.topics).toContain('/rosout');
+                done();
+            });
+        });
+    });
+
+    it('should expose a getTopics method which will return a list of topics and should contain "/rosout"', (done) => {
+        const rbServer = service.connect('ws://localhost:9090');
+        rbServer.onOpen.subscribe(() => {
+            rbServer.getTopics((topics) => {
+                expect(topics).toBeTruthy();
+                expect(topics).toContain('/rosout');
+                done();
+            });
+        });
+    });
+
+    it('should expose a getNodes method which will return a list of nodes and should contain "rosapi"', (done) => {
+        const rbServer = service.connect('ws://localhost:9090');
+        rbServer.onOpen.subscribe(() => {
+            rbServer.getNodes((nodes) => {
+                expect(nodes).toBeTruthy();
+                expect(nodes).toContain('/rosapi');
+                done();
+            });
+        });
+    });
+
+    it('should advertise a service a respond correctly to the request', (done) => {
+        const rbServer = service.connect('ws://localhost:9090');
+        rbServer.onOpen.subscribe(() => {
+            const service = new RosService<
+                Object,
+                {
+                    topics: string[];
+                    types: string[];
+                }
+            >({
+                ros: rbServer,
+                name: '/test/topics',
+                serviceType: 'rosapi/Topics',
+            });
+
+            service.advertise(({}) => {
+                return {
+                    topics: ['plotte1', 'plotte2'],
+                    types: ['plottetype1', 'plottetype2'],
+                };
+            });
+
+            service.call({}, (res) => {
+                expect(res).toBeTruthy();
+                expect(res.topics).toEqual(['plotte1', 'plotte2']);
+                expect(res.types).toEqual(['plottetype1', 'plottetype2']);
+                done();
+            });
         });
     });
 });

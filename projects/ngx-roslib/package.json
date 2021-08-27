@@ -11,6 +11,10 @@
             "name": "Maxime Verreault"
         }
     ],
+    "funding": {
+        "type" : "individual",
+        "url" : "https://www.buymeacoffee.com/maximeverreault"
+    },
     "license": "MIT",
     "repository": "https://bitbucket.asuqtr.com/projects/NG-ROS/repos/ngx-roslib/browse",
     "peerDependencies": {

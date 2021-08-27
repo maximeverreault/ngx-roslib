@@ -1,7 +1,7 @@
 import { Injectable, OnDestroy } from '@angular/core';
 import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
 import { Observable, Subject, Subscription } from 'rxjs';
-import { filter, pluck, take, tap } from 'rxjs/operators';
+import { filter, pluck, take, tap, map } from 'rxjs/operators';
 
 @Injectable({
     providedIn: 'root',
@@ -418,20 +418,16 @@ class ServiceRequest extends RosbridgeProtocol {}
 class ServiceResponse extends RosbridgeProtocol {
     private id: string | undefined;
     private service: string;
-    private values: Object | undefined = {};
+    private values: string | undefined;
     private result: boolean;
 
-    constructor(
-        service: string,
-        result: boolean,
-        id?: string,
-        values?: Object
-    ) {
+    constructor(service: string, result: boolean, values?: any, id?: string) {
         super();
         this.op = 'service_response';
         this.id = id;
         this.service = service;
-        this.values = checkJsonCompatible(values) ? values : {};
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        this.values = values ?? {};
         this.result = result;
     }
 }
@@ -559,7 +555,7 @@ interface RosServiceParams {
     ros: Rosbridge;
 }
 
-class RosService<
+export class RosService<
     T_REQ extends { toString: () => string },
     T_RES extends { toString: () => string }
 > implements RosServiceParams
@@ -576,11 +572,33 @@ class RosService<
         this.serviceType = serviceType;
     }
 
-    advertise() {
+    advertise(callback: (req: T_REQ) => T_RES) {
         const serviceAdvertiseRequest = new AdvertiseService(
             this.serviceType,
             this.name
         );
+        this.ros.connection$
+            ?.pipe(
+                filter(
+                    (data) =>
+                        data?.service === this.name && // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+                        data?.op === 'call_service' // eslint-disable-line @typescript-eslint/no-unsafe-member-access
+                ),
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                map(({ args, id }) => ({ args, id }))
+            )
+            .subscribe((req: { args: T_REQ; id?: string }) => {
+                console.log(req);
+                const res = callback(req.args);
+                const serviceResponse = new ServiceResponse(
+                    this.name,
+                    true,
+                    res,
+                    req.id ?? ''
+                );
+                this.ros.sendRequest(serviceResponse);
+            });
+
         this.ros.sendRequest(serviceAdvertiseRequest);
         this.isAdvertised = true;
     }
@@ -608,6 +626,8 @@ class RosService<
                             failedCallback(msg.values);
                         }
                 }),
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                filter((data) => data?.result !== false),
                 pluck('values'),
                 take(1)
             )
