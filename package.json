@@ -1,6 +1,6 @@
 {
     "name": "ngx-roslib",
-    "version": "0.0.1",
+    "version": "0.0.6",
     "scripts": {
         "ng": "ng",
         "start": "ng serve",
@@ -10,7 +10,9 @@
         "test": "ng test ngx-roslib",
         "test:ci": "ng test ngx-roslib --reporters=junit --no-watch --no-progress --browsers=ChromeHeadlessCI",
         "lint": "ng lint ngx-roslib",
-        "lint:ci": "eslint -c projects/ngx-roslib/.eslintrc.json --ext .ts ./projects/ngx-roslib/src --format=junit --output-file=ngx-roslib-linting-report.xml"
+        "lint:ci": "eslint -c projects/ngx-roslib/.eslintrc.json --ext .ts ./projects/ngx-roslib/src --format=junit --output-file=ngx-roslib-linting-report.xml",
+        "copy-readme": "copy .\\README.md .\\dist\\ngx-roslib",
+        "prepare": "npm run build:prod && npm run copy-readme && cd dist/ngx-roslib && npm pack"
     },
     "dependencies": {
         "@angular/animations": "~12.2.0",
