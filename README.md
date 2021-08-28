@@ -119,7 +119,7 @@ Services:
 
 Params:
 
-- [ ] Get
+- [X] Get
 - [ ] Set
 - [ ] Delete
 

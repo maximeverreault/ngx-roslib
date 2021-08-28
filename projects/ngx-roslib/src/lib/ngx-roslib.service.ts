@@ -376,7 +376,7 @@ class ServiceCall extends RosbridgeProtocol {
 
     constructor(
         service: string,
-        args?: Object,
+        args?: any,
         id?: string,
         fragment_size?: number,
         compression?: 'none' | 'png'
@@ -385,7 +385,8 @@ class ServiceCall extends RosbridgeProtocol {
         this.op = 'call_service';
         this.service = service;
         this.id = id ?? `call_service:${this.service}:${++idCounter}`;
-        this.args = checkJsonCompatible(args) ? args : {};
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        this.args = args ?? {};
         this.fragment_size = fragment_size;
         this.compression = compression;
     }
@@ -554,6 +555,10 @@ interface RosServiceParams {
     serviceType: string;
     ros: Rosbridge;
 }
+interface RosParamParams {
+    name: string;
+    ros: Rosbridge;
+}
 
 export class RosService<
     T_REQ extends { toString: () => string },
@@ -588,7 +593,6 @@ export class RosService<
                 map(({ args, id }) => ({ args, id }))
             )
             .subscribe((req: { args: T_REQ; id?: string }) => {
-                console.log(req);
                 const res = callback(req.args);
                 const serviceResponse = new ServiceResponse(
                     this.name,
@@ -609,7 +613,6 @@ export class RosService<
         failedCallback?: (res: any) => void
     ) {
         const serviceCallRequest = new ServiceCall(this.name, req);
-
         this.ros.connection$
             ?.pipe(
                 filter(
@@ -642,17 +645,32 @@ export class RosService<
     }
 }
 
-function checkJsonCompatible(item: any): boolean {
-    item = typeof item !== 'string' ? JSON.stringify(item) : item;
+export class RosParam<T extends { toString: () => string }>
+    implements RosParamParams
+{
+    name: string;
+    ros: Rosbridge;
 
-    try {
-        JSON.parse(item);
-    } catch (e) {
-        console.error(item);
-        throw new TypeError('The argument is not a JSON compatible object');
+    constructor({ ros, name }: RosParamParams) {
+        this.ros = ros;
+        this.name = name;
     }
 
-    return typeof item === 'object' && item !== null;
+    get(callback: (res: T) => void) {
+        const paramService = new RosService<{ name: string }, { value: T }>({
+            ros: this.ros,
+            name: '/rosapi/get_param',
+            serviceType: 'rosapi/GetParam',
+        });
+        paramService.call({ name: this.name }, (res) => {
+            // @ts-ignore
+            callback(JSON.parse(res.value));
+        });
+    }
+
+    set(newValue: T, callback: () => void) {}
+
+    delete(callback: (res: T) => void) {}
 }
 
 type StatusMessageLevel = 'info' | 'warning' | 'error' | 'none';
