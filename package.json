@@ -7,11 +7,11 @@
         "build": "ng build ngx-roslib",
         "build:prod": "ng build ngx-roslib --configuration production",
         "watch": "ng build ngx-roslib --watch --configuration development",
-        "test": "ng test ngx-roslib",
+        "test": "ng test ngx-roslib --browsers=Chrome",
         "test:ci": "ng test ngx-roslib --reporters=junit --no-watch --no-progress --browsers=ChromeHeadlessCI",
         "lint": "ng lint ngx-roslib",
         "lint:ci": "eslint -c projects/ngx-roslib/.eslintrc.json --ext .ts ./projects/ngx-roslib/src --format=junit --output-file=ngx-roslib-linting-report.xml",
-        "copy-readme": "copy .\\README.md .\\dist\\ngx-roslib",
+        "copy-readme": "shx cp README.md dist/ngx-roslib",
         "prepare": "npm run build:prod && npm run copy-readme && cd dist/ngx-roslib && npm pack"
     },
     "dependencies": {
@@ -51,6 +51,7 @@
         "karma-jasmine": "~4.0.0",
         "karma-jasmine-html-reporter": "~1.7.0",
         "ng-packagr": "^12.1.1",
+        "shx": "^0.3.3",
         "typescript": "~4.3.5"
     }
 }
