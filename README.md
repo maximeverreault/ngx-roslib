@@ -120,8 +120,8 @@ Services:
 Params:
 
 - [X] Get
-- [ ] Set
-- [ ] Delete
+- [X] Set
+- [X] Delete
 
 Miscellaneous:
 

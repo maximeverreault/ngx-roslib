@@ -555,6 +555,7 @@ interface RosServiceParams {
     serviceType: string;
     ros: Rosbridge;
 }
+
 interface RosParamParams {
     name: string;
     ros: Rosbridge;
@@ -668,9 +669,34 @@ export class RosParam<T extends { toString: () => string }>
         });
     }
 
-    set(newValue: T, callback: () => void) {}
+    set(newValue: T, callback: () => void) {
+        const paramService = new RosService<
+            { name: string; value: string },
+            {}
+        >({
+            ros: this.ros,
+            name: '/rosapi/set_param',
+            serviceType: 'rosapi/SetParam',
+        });
+        paramService.call(
+            { name: this.name, value: JSON.stringify(newValue) },
+            () => {
+                callback();
+            }
+        );
+    }
 
-    delete(callback: (res: T) => void) {}
+    delete(callback: () => void) {
+        const paramService = new RosService<{ name: string }, {}>({
+            ros: this.ros,
+            name: '/rosapi/delete_param',
+            serviceType: 'rosapi/DeleteParam',
+        });
+
+        paramService.call({ name: this.name }, () => {
+            callback();
+        });
+    }
 }
 
 type StatusMessageLevel = 'info' | 'warning' | 'error' | 'none';

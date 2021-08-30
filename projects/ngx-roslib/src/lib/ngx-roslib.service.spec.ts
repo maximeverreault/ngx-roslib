@@ -1,6 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 
-import { NgxRoslibService, RosService, RosTopic } from './ngx-roslib.service';
+import {
+    NgxRoslibService,
+    RosParam,
+    RosService,
+    RosTopic,
+} from './ngx-roslib.service';
 import { NumberMessage, RosoutMessage } from './ros-message.model';
 
 describe('NgxRoslibService', () => {
@@ -118,7 +123,7 @@ describe('NgxRoslibService', () => {
     it('should advertise a service a respond correctly to the request', (done) => {
         const rbServer = service.connect('ws://localhost:9090');
         rbServer.onOpen.subscribe(() => {
-            const service = new RosService<
+            const serviceTesting = new RosService<
                 Object,
                 {
                     topics: string[];
@@ -130,18 +135,54 @@ describe('NgxRoslibService', () => {
                 serviceType: 'rosapi/Topics',
             });
 
-            service.advertise(({}) => {
+            serviceTesting.advertise(({}) => {
                 return {
                     topics: ['plotte1', 'plotte2'],
                     types: ['plottetype1', 'plottetype2'],
                 };
             });
 
-            service.call({}, (res) => {
+            serviceTesting.call({}, (res) => {
                 expect(res).toBeTruthy();
                 expect(res.topics).toEqual(['plotte1', 'plotte2']);
                 expect(res.types).toEqual(['plottetype1', 'plottetype2']);
+                serviceTesting.unadvertise();
                 done();
+            });
+        });
+    });
+
+    it('should read a RosParam successfully', (done) => {
+        const rbServer = service.connect('ws://localhost:9090');
+        rbServer.onOpen.subscribe(() => {
+            const param = new RosParam<number>({
+                ros: rbServer,
+                name: '/rosbridge_websocket/port',
+            });
+            param.get((res) => {
+                expect(res).toBeTruthy();
+                expect(res).toEqual(9090);
+                done();
+            });
+        });
+    });
+
+    it('should overwrite a RosParam successfully', (done) => {
+        const rbServer = service.connect('ws://localhost:9090');
+        rbServer.onOpen.subscribe(() => {
+            const param = new RosParam<number>({
+                ros: rbServer,
+                name: '/rosbridge_websocket/port',
+            });
+            param.get((oldValue) => {
+                param.set(oldValue + 1, () => {
+                    param.get((newValue) => {
+                        expect(newValue).toEqual(oldValue + 1);
+                        param.set(9090, () => {
+                            done();
+                        });
+                    });
+                });
             });
         });
     });
