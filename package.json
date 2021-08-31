@@ -11,8 +11,8 @@
         "test:ci": "ng test ngx-roslib --reporters=junit --no-watch --no-progress --browsers=ChromeHeadlessCI",
         "lint": "ng lint ngx-roslib",
         "lint:ci": "eslint -c projects/ngx-roslib/.eslintrc.json --ext .ts ./projects/ngx-roslib/src --format=junit --output-file=ngx-roslib-linting-report.xml",
-        "copy-readme": "shx cp README.md dist/ngx-roslib",
-        "prepare": "npm run build:prod && npm run copy-readme && cd dist/ngx-roslib && npm pack"
+        "copy:readme": "shx cp README.md dist/ngx-roslib",
+        "postbuild:prod": "npm run copy:readme && cd dist/ngx-roslib && npm pack"
     },
     "dependencies": {
         "@angular/animations": "~12.2.0",

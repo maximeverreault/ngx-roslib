@@ -79,7 +79,7 @@ describe('NgxRoslibService', () => {
         const rbServer = service.connect('ws://localhost:9090');
         service.onOpen?.subscribe(() => {
             const service = new RosService<
-                Object,
+                {},
                 {
                     topics: string[];
                     types: string[];
@@ -124,7 +124,7 @@ describe('NgxRoslibService', () => {
         const rbServer = service.connect('ws://localhost:9090');
         rbServer.onOpen.subscribe(() => {
             const serviceTesting = new RosService<
-                Object,
+                {},
                 {
                     topics: string[];
                     types: string[];

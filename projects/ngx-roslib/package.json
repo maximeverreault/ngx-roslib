@@ -1,7 +1,7 @@
 {
     "name": "ngx-roslib",
     "description": "This package is an Angular service created to be an efficient ROSLIB interface in an Angular application. This package is based on the official Rosbridge Protocol 2.0 ",
-    "version": "0.0.8",
+    "version": "1.0.0",
     "author": {
         "name": "Maxime Verreault",
         "email": "maximeverreault24@hey.com"
@@ -18,9 +18,7 @@
     },
     "license": "MIT",
     "repository": "https://github.com/maximeverreault/ngx-roslib",
-    "bugs": {
-        "url": "https://github.com/maximeverreault/ngx-roslib/issues"
-    },
+    "bugs": "https://github.com/maximeverreault/ngx-roslib/issues",
     "peerDependencies": {
         "@angular/common": "^12.2.0",
         "@angular/core": "^12.2.0"
