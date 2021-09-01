@@ -24,13 +24,13 @@ export interface ImuMessage {
     linear_acceleration_covariance?: number[] | null;
 }
 
-interface Vector3Message {
+export interface Vector3Message {
     x?: number | null;
     y?: number | null;
     z?: number | null;
 }
 
-interface QuaternionMessage {
+export interface QuaternionMessage {
     x?: number | null;
     y?: number | null;
     z?: number | null;
