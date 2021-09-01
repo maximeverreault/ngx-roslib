@@ -24,6 +24,11 @@ export interface ImuMessage {
     linear_acceleration_covariance?: number[] | null;
 }
 
+export interface PointStampedMessage {
+    header: RosMsgHeader;
+    point?: Vector3Message;
+}
+
 export interface Vector3Message {
     x?: number | null;
     y?: number | null;

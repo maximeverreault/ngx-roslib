@@ -1,7 +1,7 @@
 {
     "name": "ngx-roslib",
     "description": "This package is an Angular service created to be an efficient ROSLIB interface in an Angular application. This package is based on the official Rosbridge Protocol 2.0 ",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "author": {
         "name": "Maxime Verreault",
         "email": "maximeverreault24@hey.com"
