@@ -100,6 +100,83 @@ this.joyData.subscribe((joyData) => {
 
 Note: In this example, an `Observable` containing gamepad data (pre-formatted for a `JoyMessage`) is required. In this example, the `Observable` is within `this.joyData`
 
+### How to call a service
+
+The class `RosService` is instantiated with 3 things: the typing details for the request, the typing details for the response and the information about the service (Ros object, name of the service and type of the service in ROS). In this example, the service called is a basic service provided by ROS which returns all currently available topics in a list of strings with the associated topic types in a separate list of strings (more info [here](http://docs.ros.org/en/indigo/api/rosapi/html/srv/Topics.html)). The format of the request and response must match what is defined in the `.srv` file describing the called service.
+
+```typescript
+import { RosService } from 'ngx-roslib';
+
+...
+
+const service = new RosService<{},{ topics: string[]; types: string[]; }>({
+    ros: this.rbServer,
+    name: '/rosapi/topics',
+    serviceType: 'rosapi/Topics',
+});
+
+service.call({}, (msg) => {
+    console.log(`ROS listed these topics ${msg.topics} with these topic types ${msg.types}`);
+});
+```
+
+### How to advertise a service and respond to requests
+
+*This requires that the service is defined beforehand in ROS. Otherwise, the service can't be advertised.*
+
+The Roslib library can also advertise its own service to receive requests and respond to them accordingly. In this example, the service is using the same definition as the `/rosapi/topics` service for the sake of demonstration.
+
+```typescript
+import { RosService } from 'ngx-roslib';
+
+...
+
+const service= new RosService<{}, { topics: string[]; types: string[]; }>({
+    ros: this.rbServer,
+    name: '/example/service', // Give the service a meaningful name. This is what the caller will use to call the service
+    serviceType: 'rosapi/Topics',   // Using the same serviceType as the '/rosapi/topics' service 
+});
+
+service.advertise(({}) => { // Empty request body. If some request arguments are used, they will be written as 'service.advertise(({ argument1, argument2 }) => {'
+    return {
+        topics: ['stringInList1', 'stringInList2'], // These are what the caller will receive as the response. The value can be determined by some kind of logic instead of hard-coded values. Again, just an example
+        types: ['otherStringInList1', 'otherStringInList2'],
+    };
+});
+```
+
+### Read the value of a RosParam
+
+```typescript
+import { RosParam } from 'ngx-roslib';
+
+...
+
+const param = new RosParam<number>({
+    ros: this.rbServer,
+    name: '/rosbridge_websocket/port',
+});
+param.get((res) => {
+    console.log('The port for rosbridge_websocket is: ', res); // By default the port is set to 9090
+});
+```
+
+### Change the value of a RosParam
+
+```typescript
+import { RosParam } from 'ngx-roslib';
+
+...
+
+const param = new RosParam<number>({
+    ros: this.rbServer,
+    name: '/rosbridge_websocket/port',
+});
+param.set(9091, () => {
+    console.log('The port for rosbridge_websocket is now set to 9091'); // By default the port is set to 9090. This would take effect on the next rosbridge_websocket launch
+});
+```
+
 ## What is implemented?
 
 Topics: 
@@ -120,8 +197,8 @@ Services:
 Params:
 
 - [X] Get
-- [ ] Set
-- [ ] Delete
+- [X] Set
+- [X] Delete
 
 Miscellaneous:
 
